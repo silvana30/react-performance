@@ -3,16 +3,17 @@
 
 import * as React from 'react'
 import {useCombobox} from '../use-combobox'
-import {getItems} from '../filter-cities'
-import {useForceRerender} from '../utils'
+// import {getItems} from '../filter-cities'
+import {useAsync, useForceRerender} from '../utils'
+import {getItems} from '../workerized-filter-cities'
 
 function Menu({
-  items,
-  getMenuProps,
-  getItemProps,
-  highlightedIndex,
-  selectedItem,
-}) {
+                items,
+                getMenuProps,
+                getItemProps,
+                highlightedIndex,
+                selectedItem,
+              }) {
   return (
     <ul {...getMenuProps()}>
       {items.map((item, index) => (
@@ -32,13 +33,13 @@ function Menu({
 }
 
 function ListItem({
-  getItemProps,
-  item,
-  index,
-  selectedItem,
-  highlightedIndex,
-  ...props
-}) {
+                    getItemProps,
+                    item,
+                    index,
+                    selectedItem,
+                    highlightedIndex,
+                    ...props
+                  }) {
   const isSelected = selectedItem?.id === item.id
   const isHighlighted = highlightedIndex === index
   return (
@@ -60,8 +61,12 @@ function App() {
   const forceRerender = useForceRerender()
   const [inputValue, setInputValue] = React.useState('')
 
-  // 🐨 wrap getItems in a call to `React.useMemo`
-  const allItems = getItems(inputValue)
+  const {data: allItems, error, status, run} = useAsync({data: [], status: 'pending'})
+
+  React.useEffect(() => {
+    run(getItems(inputValue))
+  }, [inputValue, run])
+
   const items = allItems.slice(0, 100)
 
   const {
@@ -87,13 +92,13 @@ function App() {
   })
 
   return (
-    <div className="city-app">
+    <div className='city-app'>
       <button onClick={forceRerender}>force rerender</button>
       <div>
         <label {...getLabelProps()}>Find a city</label>
         <div {...getComboboxProps()}>
           <input {...getInputProps({type: 'text'})} />
-          <button onClick={() => selectItem(null)} aria-label="toggle menu">
+          <button onClick={() => selectItem(null)} aria-label='toggle menu'>
             &#10005;
           </button>
         </div>
